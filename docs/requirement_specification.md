@@ -148,9 +148,9 @@ CREATE TRIGGER update_words_updated_at
 // Word представляет слово в словаре пользователя
 // Содержит основную информацию о японском слове и его переводе
 type Word struct {
-    | ID       int       `json:"id" db:"id"`
-    Russian  []string  `json:"ru" db:"ru"`    // Переводы на русский язык
-    Japanese []string  `json:"jp" db:"jp"`    // Написания на японском
+    ID  int       `json:"id" db:"id"`
+    Ru  []string  `json:"ru" db:"ru"`   // Переводы на русский язык
+    Jp  []string  `json:"jp" db:"jp"`   // Написания на японском
     // ... остальные поля
 }
 ```
@@ -201,7 +201,7 @@ type DatabaseConfig struct {
     Port     int    `yaml:"port" env:"PORT" default:"5432"`
     User     string `yaml:"user" env:"USER" default:"app_user"`
     Password string `yaml:"password" env:"PASSWORD" required:"true"`
-    Name     string `yaml:"name" env:"NAME" default:"japanese_dict"`
+    Name     string `yaml:"name" env:"NAME" default:"jp_ru_dict"`
     SSLMode  string `yaml:"ssl_mode" env:"SSL_MODE" default:"disable"`
 }
 ```
