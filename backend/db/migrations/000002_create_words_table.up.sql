@@ -29,13 +29,12 @@ CREATE INDEX idx_words_created_at ON words(created_at DESC);
 CREATE INDEX idx_words_onyomi ON words USING GIN("on") WHERE "on" IS NOT NULL;
 CREATE INDEX idx_words_kunyomi ON words USING GIN(kun) WHERE kun IS NOT NULL;
 
--- Индекс для триграммного поиска (требует расширение pg_trgm)
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
-CREATE INDEX idx_words_jp_trgm ON words USING GIN(jp gin_trgm_ops);
-CREATE INDEX idx_words_ru_trgm ON words USING GIN(ru gin_trgm_ops);
-
 -- Триггер для автоматического обновления updated_at
 CREATE TRIGGER update_words_updated_at 
     BEFORE UPDATE ON words 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
+
+-- Индекс для поиска по элементам массива
+CREATE INDEX idx_words_jp_elems ON words USING GIN(jp);
+CREATE INDEX idx_words_ru_elems ON words USING GIN(ru);

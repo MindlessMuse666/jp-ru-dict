@@ -111,19 +111,19 @@ func (r *wordsRepository) DeleteWord(wordID, userID int) error {
 // SearchWords выполняет поиск слов по различным критериям
 func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []string, limit, cursor int) ([]*model.Word, error) {
 	baseQuery := `SELECT id, user_id, jp, ru, "on", kun, ex_jp, ex_ru, tags, created_at, updated_at
-				  FROM words 
-				  WHERE user_id = $1 AND id > $2`
+                  FROM words 
+                  WHERE user_id = $1 AND id > $2`
 
 	args := []interface{}{userID, cursor}
 	argCounter := 3
 
 	var conditions []string
 
-	// Поиск по тексту (подстрока в массивах jp или ru)
+	// Поиск по подстроке в массивах
 	if query != "" {
 		conditions = append(conditions,
 			fmt.Sprintf(`(EXISTS (SELECT 1 FROM unnest(jp) AS elem WHERE elem ILIKE '%%' || $%d || '%%') OR 
-						  EXISTS (SELECT 1 FROM unnest(ru) AS elem WHERE elem ILIKE '%%' || $%d || '%%'))`,
+                          EXISTS (SELECT 1 FROM unnest(ru) AS elem WHERE elem ILIKE '%%' || $%d || '%%'))`,
 				argCounter, argCounter))
 		args = append(args, query)
 		argCounter++
