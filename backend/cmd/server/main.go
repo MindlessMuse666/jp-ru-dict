@@ -1,3 +1,23 @@
+// @title JP-RU Dictionary API
+// @version 1.0
+// @description API для личного русско-японского словаря
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.url http://www.swagger.io/support
+// @contact.email support@swagger.io
+
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host localhost:8080
+// @BasePath /api
+// @schemes http
+
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 package main
 
 import (
@@ -12,6 +32,7 @@ import (
 	"syscall"
 	"time"
 
+	_ "jp-ru-dict/backend/docs"
 	"jp-ru-dict/backend/internal/config"
 	"jp-ru-dict/backend/internal/db"
 	"jp-ru-dict/backend/internal/handler"
@@ -24,6 +45,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Server struct {
@@ -84,6 +108,9 @@ func NewServer(database *sql.DB, cfg *config.Config) *Server {
 
 	// Системные маршруты
 	router.GET("/api/health", healthHandler.HealthCheck)
+
+	// Добавляем Swagger UI
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	server := &http.Server{
 		Addr:         ":" + cfg.Server.Port,
