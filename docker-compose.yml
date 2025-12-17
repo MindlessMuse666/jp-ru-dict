@@ -101,6 +101,25 @@ services:
       "
     restart: unless-stopped
 
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8080/api}
+      VITE_APP_NAME: ${VITE_APP_NAME:-JP-RU Dictionary}
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
   pgadmin:
     image: dpage/pgadmin4:latest
     environment:

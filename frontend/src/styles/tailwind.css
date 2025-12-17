@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    body {
+        @apply bg-background text-black font-sans;
+    }
+
+    /* Стили для японского текста */
+    .jp-text {
+        @apply font-jp;
+    }
+
+    /* Цвета для чтений */
+    .onyomi {
+        @apply text-onyomi;
+    }
+
+    .kunyomi {
+        @apply text-kunyomi;
+    }
+}
