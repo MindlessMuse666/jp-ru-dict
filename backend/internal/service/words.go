@@ -57,6 +57,11 @@ func (s *wordsService) GetWord(userID, wordID int) (*model.Word, error) {
 
 // UpdateWord обновляет существующее слово
 func (s *wordsService) UpdateWord(userID, wordID int, req *model.WordUpdateRequest) (*model.Word, error) {
+	// Валидируем, что хотя бы одно поле было передано
+	if err := req.Validate(); err != nil {
+		return nil, err
+	}
+
 	// Получаем текущее слово
 	word, err := s.repo.GetWordByIDAndUserID(wordID, userID)
 	if err != nil {
@@ -67,6 +72,7 @@ func (s *wordsService) UpdateWord(userID, wordID int, req *model.WordUpdateReque
 	}
 
 	// Обновляем только переданные поля
+	// Для массивов nil означает "не передано", пустой массив [] означает "очистить поле"
 	if req.Jp != nil {
 		word.Jp = req.Jp
 	}

@@ -119,10 +119,11 @@ func (r *wordsRepository) GetWordByIDAndUserID(wordID, userID int) (*model.Word,
 // UpdateWord обновляет существующее слово
 func (r *wordsRepository) UpdateWord(word *model.Word) error {
 	query := `UPDATE words 
-              SET jp = $1, ru = $2, "on" = $3, kun = $4, ex_jp = $5, ex_ru = $6, tags = $7
-              WHERE id = $8 AND user_id = $9
-              RETURNING updated_at`
+			  SET jp = $1, ru = $2, "on" = $3, kun = $4, ex_jp = $5, ex_ru = $6, tags = $7
+			  WHERE id = $8 AND user_id = $9
+			  RETURNING updated_at`
 
+	// Конвертация для корректной обработки nil и пустых массивов
 	err := r.db.QueryRow(query,
 		pq.Array(word.Jp),
 		pq.Array(word.Ru),

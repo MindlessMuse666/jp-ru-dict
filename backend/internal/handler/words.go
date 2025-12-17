@@ -122,14 +122,18 @@ func (h *WordsHandler) GetWord(c *gin.Context) {
 
 // UpdateWord обновляет слово
 // @Summary Обновить слово
-// @Description Обновляет существующее слово (частичное обновление)
+// @Description Обновляет существующее слово (частичное обновление).
+// @Description Все поля опциональны: если поле не передано, оно сохраняет текущее значение.
+// @Description Передача пустого массива [] очищает поле.
+// @Description Передача null или отсутствие поля оставляет значение без изменений.
 // @Tags words
 // @Accept json
 // @Produce json
 // @Security BearerAuth
 // @Param id path int true "ID слова"
-// @Param request body model.WordUpdateRequest true "Обновленные данные"
+// @Param request body model.WordUpdateRequest true "Обновленные данные (все поля опциональны)"
 // @Success 200 {object} map[string]interface{} "Слово обновлено"
+// @Failure 400 {object} map[string]string "Неверные данные или пустой запрос"
 // @Failure 404 {object} map[string]string "Слово не найдено"
 // @Router /api/words/{id} [patch]
 func (h *WordsHandler) UpdateWord(c *gin.Context) {
@@ -148,7 +152,14 @@ func (h *WordsHandler) UpdateWord(c *gin.Context) {
 
 	word, err := h.wordsService.UpdateWord(userID, wordID, &req)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		// Проверяем тип ошибки для более точного HTTP статуса
+		if err.Error() == "слово не найдено" {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else if err.Error() == "хотя бы одно поле должно быть передано для обновления" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		}
 		return
 	}
 
