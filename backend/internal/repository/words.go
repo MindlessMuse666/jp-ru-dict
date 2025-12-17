@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"jp-ru-dict/backend/internal/model"
 	"strings"
+
+	"github.com/lib/pq"
 )
 
 // WordsRepository определяет интерфейс для работы со словами
@@ -29,11 +31,19 @@ func NewWordsRepository(db *sql.DB) WordsRepository {
 // CreateWord создает новое слово в словаре пользователя
 func (r *wordsRepository) CreateWord(word *model.Word) error {
 	query := `INSERT INTO words (user_id, jp, ru, "on", kun, ex_jp, ex_ru, tags)
-			  VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-			  RETURNING id, created_at, updated_at`
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+              RETURNING id, created_at, updated_at`
 
-	err := r.db.QueryRow(query, word.UserID, word.Jp, word.Ru, word.On,
-		word.Kun, word.ExJp, word.ExRu, word.Tags).
+	// Используем pq.Array для конвертации []string в формат PostgreSQL массива
+	err := r.db.QueryRow(query,
+		word.UserID,
+		pq.Array(word.Jp),
+		pq.Array(word.Ru),
+		pq.Array(word.On),
+		pq.Array(word.Kun),
+		pq.Array(word.ExJp),
+		pq.Array(word.ExRu),
+		pq.Array(word.Tags)).
 		Scan(&word.ID, &word.CreatedAt, &word.UpdatedAt)
 
 	return err
@@ -42,10 +52,10 @@ func (r *wordsRepository) CreateWord(word *model.Word) error {
 // GetWordsByUserID получает список слов пользователя с пагинацией
 func (r *wordsRepository) GetWordsByUserID(userID int, limit int, cursor int) ([]*model.Word, error) {
 	query := `SELECT id, user_id, jp, ru, "on", kun, ex_jp, ex_ru, tags, created_at, updated_at
-			  FROM words 
-			  WHERE user_id = $1 AND id > $2
-			  ORDER BY id ASC
-			  LIMIT $3`
+              FROM words 
+              WHERE user_id = $1 AND id > $2
+              ORDER BY id ASC
+              LIMIT $3`
 
 	rows, err := r.db.Query(query, userID, cursor, limit)
 	if err != nil {
@@ -56,9 +66,19 @@ func (r *wordsRepository) GetWordsByUserID(userID int, limit int, cursor int) ([
 	var words []*model.Word
 	for rows.Next() {
 		word := &model.Word{}
-		err := rows.Scan(&word.ID, &word.UserID, &word.Jp, &word.Ru, &word.On,
-			&word.Kun, &word.ExJp, &word.ExRu, &word.Tags,
-			&word.CreatedAt, &word.UpdatedAt)
+		err := rows.Scan(
+			&word.ID,
+			&word.UserID,
+			pq.Array(&word.Jp),
+			pq.Array(&word.Ru),
+			pq.Array(&word.On),
+			pq.Array(&word.Kun),
+			pq.Array(&word.ExJp),
+			pq.Array(&word.ExRu),
+			pq.Array(&word.Tags),
+			&word.CreatedAt,
+			&word.UpdatedAt,
+		)
 		if err != nil {
 			return nil, err
 		}
@@ -72,13 +92,22 @@ func (r *wordsRepository) GetWordsByUserID(userID int, limit int, cursor int) ([
 func (r *wordsRepository) GetWordByIDAndUserID(wordID, userID int) (*model.Word, error) {
 	word := &model.Word{}
 	query := `SELECT id, user_id, jp, ru, "on", kun, ex_jp, ex_ru, tags, created_at, updated_at
-			  FROM words 
-			  WHERE id = $1 AND user_id = $2`
+              FROM words 
+              WHERE id = $1 AND user_id = $2`
 
-	err := r.db.QueryRow(query, wordID, userID).
-		Scan(&word.ID, &word.UserID, &word.Jp, &word.Ru, &word.On,
-			&word.Kun, &word.ExJp, &word.ExRu, &word.Tags,
-			&word.CreatedAt, &word.UpdatedAt)
+	err := r.db.QueryRow(query, wordID, userID).Scan(
+		&word.ID,
+		&word.UserID,
+		pq.Array(&word.Jp),
+		pq.Array(&word.Ru),
+		pq.Array(&word.On),
+		pq.Array(&word.Kun),
+		pq.Array(&word.ExJp),
+		pq.Array(&word.ExRu),
+		pq.Array(&word.Tags),
+		&word.CreatedAt,
+		&word.UpdatedAt,
+	)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -90,12 +119,19 @@ func (r *wordsRepository) GetWordByIDAndUserID(wordID, userID int) (*model.Word,
 // UpdateWord обновляет существующее слово
 func (r *wordsRepository) UpdateWord(word *model.Word) error {
 	query := `UPDATE words 
-			  SET jp = $1, ru = $2, "on" = $3, kun = $4, ex_jp = $5, ex_ru = $6, tags = $7
-			  WHERE id = $8 AND user_id = $9
-			  RETURNING updated_at`
+              SET jp = $1, ru = $2, "on" = $3, kun = $4, ex_jp = $5, ex_ru = $6, tags = $7
+              WHERE id = $8 AND user_id = $9
+              RETURNING updated_at`
 
-	err := r.db.QueryRow(query, word.Jp, word.Ru, word.On, word.Kun,
-		word.ExJp, word.ExRu, word.Tags, word.ID, word.UserID).
+	err := r.db.QueryRow(query,
+		pq.Array(word.Jp),
+		pq.Array(word.Ru),
+		pq.Array(word.On),
+		pq.Array(word.Kun),
+		pq.Array(word.ExJp),
+		pq.Array(word.ExRu),
+		pq.Array(word.Tags),
+		word.ID, word.UserID).
 		Scan(&word.UpdatedAt)
 
 	return err
@@ -119,7 +155,7 @@ func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []
 
 	var conditions []string
 
-	// Поиск по подстроке в массивах
+	// Поиск по тексту (подстрока в массивах jp или ru)
 	if query != "" {
 		conditions = append(conditions,
 			fmt.Sprintf(`(EXISTS (SELECT 1 FROM unnest(jp) AS elem WHERE elem ILIKE '%%' || $%d || '%%') OR 
@@ -132,21 +168,21 @@ func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []
 	// Поиск по тегам (точное совпадение элемента массива)
 	if len(tags) > 0 {
 		conditions = append(conditions, fmt.Sprintf(`tags @> $%d`, argCounter))
-		args = append(args, tags)
+		args = append(args, pq.Array(tags))
 		argCounter++
 	}
 
 	// Поиск по онъёми
 	if len(on) > 0 {
 		conditions = append(conditions, fmt.Sprintf(`"on" @> $%d`, argCounter))
-		args = append(args, on)
+		args = append(args, pq.Array(on))
 		argCounter++
 	}
 
 	// Поиск по кунъёми
 	if len(kun) > 0 {
 		conditions = append(conditions, fmt.Sprintf(`kun @> $%d`, argCounter))
-		args = append(args, kun)
+		args = append(args, pq.Array(kun))
 		argCounter++
 	}
 
@@ -168,9 +204,19 @@ func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []
 	var words []*model.Word
 	for rows.Next() {
 		word := &model.Word{}
-		err := rows.Scan(&word.ID, &word.UserID, &word.Jp, &word.Ru, &word.On,
-			&word.Kun, &word.ExJp, &word.ExRu, &word.Tags,
-			&word.CreatedAt, &word.UpdatedAt)
+		err := rows.Scan(
+			&word.ID,
+			&word.UserID,
+			pq.Array(&word.Jp),
+			pq.Array(&word.Ru),
+			pq.Array(&word.On),
+			pq.Array(&word.Kun),
+			pq.Array(&word.ExJp),
+			pq.Array(&word.ExRu),
+			pq.Array(&word.Tags),
+			&word.CreatedAt,
+			&word.UpdatedAt,
+		)
 		if err != nil {
 			return nil, err
 		}
