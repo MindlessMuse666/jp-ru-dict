@@ -1,6 +1,17 @@
+# Настройки сети и DNS
+networks:
+  app-network:
+    driver: bridge
+
+# Конфигурация сервисов
 services:
   postgres:
     image: postgres:18-alpine
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       POSTGRES_USER: ${DB_USER:-app_user}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
@@ -23,6 +34,11 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -32,6 +48,11 @@ services:
 
   kafka:
     image: confluentinc/cp-kafka:7.4.4
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - zookeeper
     environment:
@@ -54,6 +75,11 @@ services:
 
   backend:
     build: ./backend
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,6 +129,11 @@ services:
 
   frontend:
     build: ./frontend
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - backend
     ports:
@@ -122,6 +153,11 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4:latest
+    networks:
+      - app-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}

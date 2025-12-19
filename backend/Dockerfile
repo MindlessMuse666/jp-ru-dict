@@ -3,8 +3,11 @@ FROM golang:1.25.5-alpine AS builder
 
 WORKDIR /app
 
-# Устанавливаем зависимости для сборки
-RUN apk add --no-cache git gcc musl-dev
+# Устанавливаем зависимости для сборки с использованием зеркал
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/main" > /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repositories && \
+    apk update --no-cache && \
+    apk add --no-cache git build-base
 
 # Копируем файлы модулей
 COPY go.mod go.sum ./
@@ -17,12 +20,15 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o main ./cmd/server
 
 # Этап запуска
-FROM alpine:latest
+FROM alpine:3.20
 
 WORKDIR /app
 
-# Устанавливаем необходимые пакеты
-RUN apk add --no-cache ca-certificates postgresql-client
+# Устанавливаем необходимые пакеты с указанием конкретной версии
+RUN echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/main" > /etc/apk/repositories && \
+    echo "http://dl-cdn.alpinelinux.org/alpine/v3.20/community" >> /etc/apk/repositories && \
+    apk update --no-cache && \
+    apk add --no-cache ca-certificates postgresql-client curl
 
 # Копируем бинарный файл из этапа сборки
 COPY --from=builder /app/main .

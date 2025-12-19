@@ -1,12 +1,22 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import { fileURLToPath, URL } from 'node:url'
+import path from 'path'
 
 export default defineConfig({
     plugins: [vue()],
     resolve: {
         alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
+            '@': path.resolve(__dirname, './src')
+        }
+    },
+    root: '.',
+    build: {
+        outDir: 'dist',
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                main: path.resolve(__dirname, 'index.html')
+            }
         }
     },
     server: {
@@ -14,13 +24,9 @@ export default defineConfig({
         host: true,
         proxy: {
             '/api': {
-                target: 'http://backend:8080',
+                target: 'http://localhost:8080',
                 changeOrigin: true
             }
         }
-    },
-    preview: {
-        port: 5173,
-        host: true
     }
 })

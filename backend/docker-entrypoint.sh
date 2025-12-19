@@ -2,20 +2,29 @@
 
 set -e
 
+echo "Запуск приложения..."
+
+# Ожидаем доступности PostgreSQL
 echo "Ожидание PostgreSQL..."
-
-# Ждем, пока PostgreSQL будет готов принимать подключения
-until PGPASSWORD=password psql -h postgres -U app_user -d jp_ru_dict -c '\q' 2>/dev/null; do
-  echo "PostgreSQL еще не доступен, ждем..."
-  sleep 2
+while ! nc -z postgres 5432; do
+  sleep 0.1
 done
-
 echo "PostgreSQL доступен"
 
-echo "Выполнение миграций..."
-# Запускаем миграции
-./main --migrate
+# Ожидаем доступности Kafka
+echo "Ожидание Kafka..."
+while ! nc -z kafka 9092; do
+  sleep 0.1
+done
+echo "Kafka доступен"
 
+# Выполняем миграции, если указан флаг
+if [ "$1" = "--migrate" ]; then
+  echo "Выполнение миграций..."
+  ./main --migrate
+  exit 0
+fi
+
+# Запускаем сервер
 echo "Запуск сервера..."
-# Запускаем приложение
 exec ./main
