@@ -42,6 +42,11 @@ export const useWordsStore = defineStore('words', () => {
         error.value = null
 
         try {
+            // Сбрасываем пагинацию при поиске
+            words.value = []
+            nextCursor.value = 0
+            hasMore.value = true
+
             const response = await api.get('/words/search', { params })
             const { data } = response.data
 

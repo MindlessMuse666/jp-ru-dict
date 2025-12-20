@@ -60,8 +60,15 @@
                         d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                 </svg>
             </div>
-            <h3 class="text-lg font-medium text-gray-700 mb-2">Словарь пуст</h3>
-            <p class="text-gray-500 mb-4">Добавьте первое слово, нажав кнопку "Добавить слово"</p>
+            <h3 class="text-lg font-medium text-gray-700 mb-2">
+                {{ emptyMessage }}
+            </h3>
+            <p class="text-gray-500 mb-4" v-if="!isSearchActive">
+                Добавьте первое слово, нажав кнопку "Добавить слово"
+            </p>
+            <p class="text-gray-500 mb-4" v-else>
+                Попробуйте изменить параметры поиска
+            </p>
         </div>
 
         <!-- Список слов -->
@@ -95,7 +102,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useWordsStore } from '@/stores/words'
 import { useToast } from '@/composables/useToast'
 import WordCard from '@/components/WordCard.vue'
@@ -110,9 +117,25 @@ const isCompactView = ref(true)
 const showAddModal = ref(false)
 const showEditModal = ref(false)
 const selectedWord = ref(null)
+const currentSearchQuery = ref('')
+const isSearchActive = ref(false)
+
+// Компьютед свойство для отображения правильного сообщения
+const emptyMessage = computed(() => {
+    if (wordsStore.loading) return ''
+    if (isSearchActive.value) {
+        return currentSearchQuery.value
+            ? `По запросу "${currentSearchQuery.value}" ничего не найдено`
+            : 'Ничего не найдено'
+    }
+    return 'Словарь пуст'
+})
 
 // Бесконечная пагинация при скролле
 const handleScroll = () => {
+    // Не загружаем больше при активном поиске
+    if (isSearchActive.value) return
+
     const scrollPosition = window.innerHeight + window.scrollY
     const pageHeight = document.documentElement.offsetHeight - 200
 
@@ -128,14 +151,28 @@ const loadMoreWords = () => {
 }
 
 const handleSearch = async (query) => {
+    currentSearchQuery.value = query
+    isSearchActive.value = query.trim().length > 0
+
     if (query.trim()) {
         await wordsStore.searchWords({ q: query })
     } else {
+        // Если запрос пустой, сбрасываем поиск и загружаем все слова
+        isSearchActive.value = false
         wordsStore.fetchWords(20, true)
     }
 }
 
 const handleAdvancedSearch = async (params) => {
+    // Помечаем как активный поиск, если есть хотя бы один параметр
+    const hasParams = Object.values(params).some(value =>
+        (Array.isArray(value) && value.length > 0) ||
+        (typeof value === 'string' && value.trim().length > 0)
+    )
+
+    isSearchActive.value = hasParams
+    currentSearchQuery.value = ''
+
     await wordsStore.searchWords(params)
 }
 
@@ -150,10 +187,10 @@ const handleWordSaved = async (wordData) => {
 
         if (selectedWord.value) {
             // Редактирование существующего слова
-            result = await wordsStore.updateWord(selectedWord.value.id, wordData)
+            result = await wordsStore.updateWord(selectedWord.value.id, wordData.data)
         } else {
             // Создание нового слова
-            result = await wordsStore.createWord(wordData)
+            result = await wordsStore.createWord(wordData.data)
         }
 
         if (result.success) {
@@ -162,6 +199,7 @@ const handleWordSaved = async (wordData) => {
                     ? 'Слово успешно обновлено'
                     : 'Слово успешно добавлено'
             )
+            closeModal()
         } else {
             showError(result.error)
         }
@@ -190,3 +228,44 @@ onUnmounted(() => {
     window.removeEventListener('scroll', handleScroll)
 })
 </script>
+
+<style scoped>
+/* Добавляем адаптивные стили */
+@media (max-width: 640px) {
+    .mobile-stack {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mobile-full-width {
+        width: 100%;
+    }
+
+    .mobile-text-center {
+        text-align: center;
+    }
+
+    .mobile-mt-2 {
+        margin-top: 0.5rem;
+    }
+}
+
+/* Улучшаем отображение карточек на мобильных */
+@media (max-width: 768px) {
+    .card-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* Анимация загрузки */
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+</style>

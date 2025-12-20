@@ -6,14 +6,15 @@
 backend/.env
 backend/main
 backend/server
+backend/vendor/
+
+# Frontend
+dist/
+node_modules/
 
 # Logs
 logs/
 *.log
-
-# Dependency directories
-backend/vendor/
-node_modules/
 
 # IDE
 .vscode/

@@ -1,3 +1,320 @@
+<template>
+    <Transition name="modal">
+        <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center">
+            <!-- Фон с затемнением -->
+            <div class="fixed inset-0 bg-black bg-opacity-50" @click="close"></div>
+
+            <!-- Модальное окно - поверх фона -->
+            <div class="relative z-50 bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden mx-4">
+                <!-- Заголовок -->
+                <div class="px-6 py-4 border-b bg-gray-50 sticky top-0 z-10">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-800">
+                            {{ isEditing ? 'Редактировать слово' : 'Добавить новое слово' }}
+                        </h3>
+                        <button @click="close" class="text-gray-400 hover:text-gray-600 transition-colors p-1">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Контент с прокруткой -->
+                <div class="overflow-y-auto max-h-[calc(90vh-8rem)] p-6">
+                    <!-- Ошибки формы -->
+                    <div v-if="Object.keys(errors).length > 0"
+                        class="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-start">
+                            <svg class="w-5 h-5 text-red-500 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd"
+                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                                    clip-rule="evenodd" />
+                            </svg>
+                            <div>
+                                <h4 class="font-medium text-red-800 mb-1">Исправьте следующие ошибки:</h4>
+                                <ul class="text-sm text-red-700 list-disc list-inside">
+                                    <li v-for="(error, field) in errors" :key="field">
+                                        {{ error }}
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Основная форма -->
+                    <form @submit.prevent="handleSubmit" class="space-y-6">
+                        <!-- Японские написания -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                Японские написания
+                                <span class="text-red-500">*</span>
+                                <span class="text-xs text-gray-500 ml-2">(хотя бы одно)</span>
+                            </label>
+                            <div class="space-y-3">
+                                <div v-for="(item, index) in form.jp" :key="'jp-' + index"
+                                    class="flex items-center space-x-3">
+                                    <input v-model="form.jp[index]" type="text" :class="[
+                                        'flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors',
+                                        errors.jp ? 'border-red-300' : 'border-gray-300'
+                                    ]" placeholder="机" />
+                                    <button v-if="form.jp.length > 1" type="button"
+                                        @click="removeArrayItem('jp', index)"
+                                        class="p-2 text-gray-400 hover:text-danger transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" @click="addArrayItem('jp')"
+                                class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Добавить написание
+                            </button>
+                        </div>
+
+                        <!-- Русские переводы -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-3">
+                                Русские переводы
+                                <span class="text-red-500">*</span>
+                                <span class="text-xs text-gray-500 ml-2">(хотя бы один)</span>
+                            </label>
+                            <div class="space-y-3">
+                                <div v-for="(item, index) in form.ru" :key="'ru-' + index"
+                                    class="flex items-center space-x-3">
+                                    <input v-model="form.ru[index]" type="text" :class="[
+                                        'flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors',
+                                        errors.ru ? 'border-red-300' : 'border-gray-300'
+                                    ]" placeholder="стол" />
+                                    <button v-if="form.ru.length > 1" type="button"
+                                        @click="removeArrayItem('ru', index)"
+                                        class="p-2 text-gray-400 hover:text-danger transition-colors">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <button type="button" @click="addArrayItem('ru')"
+                                class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Добавить перевод
+                            </button>
+                        </div>
+
+                        <!-- Кнопка расширенного ввода -->
+                        <div>
+                            <button type="button" @click="showAdvanced = !showAdvanced"
+                                class="text-sm text-primary hover:text-primary/80 flex items-center">
+                                <span>{{ showAdvanced ? 'Скрыть' : 'Показать' }} дополнительные поля</span>
+                                <svg class="w-4 h-4 ml-1 transition-transform" :class="{ 'rotate-180': showAdvanced }"
+                                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Расширенные поля -->
+                        <Transition enter-active-class="transition-all duration-300 ease-out"
+                            enter-from-class="transform opacity-0 -translate-y-4"
+                            enter-to-class="transform opacity-100 translate-y-0"
+                            leave-active-class="transition-all duration-200 ease-in"
+                            leave-from-class="transform opacity-100 translate-y-0"
+                            leave-to-class="transform opacity-0 -translate-y-4">
+                            <div v-if="showAdvanced" class="space-y-6 pt-4 border-t">
+                                <!-- Онъёми -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Онъёми
+                                        <span class="text-xs text-gray-500 ml-2">(через запятую)</span>
+                                    </label>
+                                    <div class="space-y-3">
+                                        <div v-for="(item, index) in form.on" :key="'on-' + index"
+                                            class="flex items-center space-x-3">
+                                            <input v-model="form.on[index]" type="text"
+                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                                                placeholder="き" />
+                                            <button v-if="form.on.length > 1" type="button"
+                                                @click="removeArrayItem('on', index)"
+                                                class="p-2 text-gray-400 hover:text-danger transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="addArrayItem('on')"
+                                        class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Добавить онъёми
+                                    </button>
+                                </div>
+
+                                <!-- Кунъёми -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Кунъёми
+                                        <span class="text-xs text-gray-500 ml-2">(через запятую)</span>
+                                    </label>
+                                    <div class="space-y-3">
+                                        <div v-for="(item, index) in form.kun" :key="'kun-' + index"
+                                            class="flex items-center space-x-3">
+                                            <input v-model="form.kun[index]" type="text"
+                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                                                placeholder="つくえ" />
+                                            <button v-if="form.kun.length > 1" type="button"
+                                                @click="removeArrayItem('kun', index)"
+                                                class="p-2 text-gray-400 hover:text-danger transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="button" @click="addArrayItem('kun')"
+                                        class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Добавить кунъёми
+                                    </button>
+                                </div>
+
+                                <!-- Примеры на японском -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Примеры на японском
+                                        <span class="text-xs text-gray-500 ml-2">(до 3 примеров)</span>
+                                    </label>
+                                    <div class="space-y-3">
+                                        <div v-for="(item, index) in form.ex_jp" :key="'ex_jp-' + index"
+                                            class="flex items-center space-x-3">
+                                            <textarea v-model="form.ex_jp[index]" rows="2"
+                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none"
+                                                placeholder="机の上に本があります" />
+                                            <button v-if="form.ex_jp.length > 1" type="button"
+                                                @click="removeArrayItem('ex_jp', index)"
+                                                class="p-2 text-gray-400 hover:text-danger transition-colors self-start">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button v-if="form.ex_jp.length < 3" type="button" @click="addArrayItem('ex_jp')"
+                                        class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Добавить пример
+                                    </button>
+                                </div>
+
+                                <!-- Переводы примеров -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Переводы примеров
+                                        <span class="text-xs text-gray-500 ml-2">(до 3 переводов)</span>
+                                    </label>
+                                    <div class="space-y-3">
+                                        <div v-for="(item, index) in form.ex_ru" :key="'ex_ru-' + index"
+                                            class="flex items-center space-x-3">
+                                            <textarea v-model="form.ex_ru[index]" rows="2"
+                                                class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors resize-none"
+                                                placeholder="На столе лежит книга" />
+                                            <button v-if="form.ex_ru.length > 1" type="button"
+                                                @click="removeArrayItem('ex_ru', index)"
+                                                class="p-2 text-gray-400 hover:text-danger transition-colors self-start">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button v-if="form.ex_ru.length < 3" type="button" @click="addArrayItem('ex_ru')"
+                                        class="mt-2 text-sm text-primary hover:text-primary/80 flex items-center">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Добавить перевод примера
+                                    </button>
+                                </div>
+
+                                <!-- Теги -->
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-3">
+                                        Теги
+                                        <span class="text-xs text-gray-500 ml-2">(до 5 тегов, через запятую)</span>
+                                    </label>
+                                    <input v-model="tagsInput" type="text" @input="updateTagsFromInput"
+                                        @blur="updateTagsFromInput"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                                        placeholder="n5, мебель, дом" />
+
+                                    <!-- Список тегов -->
+                                    <div v-if="form.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
+                                        <span v-for="(tag, index) in form.tags" :key="'tag-' + index"
+                                            class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary/10 text-primary">
+                                            {{ tag }}
+                                            <button type="button" @click="removeTag(index)"
+                                                class="ml-2 text-primary/70 hover:text-primary">
+                                                ×
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </Transition>
+                    </form>
+                </div>
+
+                <!-- Футер с кнопками -->
+                <div class="px-6 py-4 border-t bg-gray-50 sticky bottom-0">
+                    <div class="flex justify-end space-x-3">
+                        <button @click="close" type="button"
+                            class="px-5 py-2.5 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors font-medium">
+                            Отмена
+                        </button>
+                        <button @click="handleSubmit" :disabled="isSubmitting" :class="[
+                            'px-5 py-2.5 bg-primary hover:bg-primary/90 text-white font-medium rounded-lg transition-colors',
+                            isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+                        ]">
+                            <span v-if="isSubmitting">Сохранение...</span>
+                            <span v-else>{{ isEditing ? 'Сохранить изменения' : 'Добавить слово' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </Transition>
+</template>
+
 <script setup>
 import { ref, reactive, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
@@ -45,7 +362,7 @@ watch(() => props.isOpen, (isOpen) => {
             isEditing.value = false
         }
     }
-})
+}, { immediate: true })
 
 const loadWordData = (word) => {
     form.jp = [...word.jp]
@@ -123,6 +440,7 @@ const updateTagsFromInput = () => {
         .slice(0, 5) // Ограничение на 5 тегов
 
     form.tags = tags
+    tagsInput.value = tags.join(', ')
 }
 
 const removeTag = (index) => {
@@ -162,3 +480,15 @@ const close = () => {
     emit('close')
 }
 </script>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.modal-enter-from,
+.modal-leave-to {
+    opacity: 0;
+}
+</style>
