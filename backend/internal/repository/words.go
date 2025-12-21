@@ -166,23 +166,23 @@ func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []
 		argCounter++
 	}
 
-	// Поиск по тегам (точное совпадение элемента массива)
+	// Поиск по тегам (хотя бы один совпадающий элемент массива)
 	if len(tags) > 0 {
-		conditions = append(conditions, fmt.Sprintf(`tags @> $%d`, argCounter))
+		conditions = append(conditions, fmt.Sprintf(`tags && $%d`, argCounter))
 		args = append(args, pq.Array(tags))
 		argCounter++
 	}
 
 	// Поиск по онъёми
 	if len(on) > 0 {
-		conditions = append(conditions, fmt.Sprintf(`"on" @> $%d`, argCounter))
+		conditions = append(conditions, fmt.Sprintf(`"on" && $%d`, argCounter))
 		args = append(args, pq.Array(on))
 		argCounter++
 	}
 
 	// Поиск по кунъёми
 	if len(kun) > 0 {
-		conditions = append(conditions, fmt.Sprintf(`kun @> $%d`, argCounter))
+		conditions = append(conditions, fmt.Sprintf(`kun && $%d`, argCounter))
 		args = append(args, pq.Array(kun))
 		argCounter++
 	}
