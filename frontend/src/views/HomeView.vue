@@ -52,6 +52,11 @@
             </div>
         </div>
 
+        <!-- Индикатор загрузки при первоначальной загрузке -->
+        <div v-if="wordsStore.loading && wordsStore.words.length === 0" class="space-y-4">
+            <WordSkeleton v-for="n in 5" :key="'skeleton-' + n" />
+        </div>
+
         <!-- Сообщение о пустом списке -->
         <div v-if="!wordsStore.loading && (!wordsStore.words || wordsStore.words.length === 0)"
             class="text-center py-12">
@@ -74,13 +79,20 @@
 
         <!-- Список слов -->
         <div v-else>
-            <div class="space-y-4">
+            <TransitionGroup name="list" tag="div" class="space-y-4">
                 <WordCard v-for="word in wordsStore.words" :key="word.id" :word="word" :is-compact-view="isCompactView"
                     @edit="handleEditWord(word)" />
-            </div>
+            </TransitionGroup>
 
             <!-- Индикатор загрузки -->
             <LoadingSpinner v-if="wordsStore.loading && wordsStore.words.length > 0" />
+
+            <!-- Индикатор загрузки при подгрузке новых слов -->
+            <div v-else-if="wordsStore.loading && wordsStore.words.length > 0" class="mt-6">
+                <div class="space-y-4">
+                    <WordSkeleton v-for="n in 3" :key="'skeleton-more-' + n" />
+                </div>
+            </div>
 
             <!-- Кнопка "Загрузить еще" для десктопа -->
             <div v-if="!wordsStore.loading && wordsStore.hasMore" class="mt-6 text-center">
@@ -97,19 +109,58 @@
         </div>
 
         <!-- Модальное окно добавления/редактирования -->
-        <WordFormModal :is-open="showAddModal || showEditModal" :word="selectedWord" @close="closeModal"
-            @saved="handleWordSaved" />
+        <Transition name="modal">
+            <WordFormModal v-if="showAddModal || showEditModal" :word="selectedWord" @close="closeModal"
+                @saved="handleWordSaved" />
+        </Transition>
     </div>
 </template>
+
+<style scoped>
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.3s ease;
+}
+
+.list-enter-from {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.list-leave-to {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.list-leave-active {
+    position: absolute;
+    width: 100%;
+}
+
+.list-move {
+    transition: transform 0.3s ease;
+}
+
+/* Улучшение для мобильных устройств */
+@media (max-width: 640px) {
+
+    .list-enter-active,
+    .list-leave-active {
+        transition: all 0.2s ease;
+    }
+}
+</style>
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useWordsStore } from '@/stores/words'
 import { useToast } from '@/composables/useToast'
+import { useHotkeys } from '@/composables/useHotkeys'
 import WordCard from '@/components/WordCard.vue'
 import WordFormModal from '@/components/WordFormModal.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import WordSkeleton from '@/components/WordSkeleton.vue'
 
 const wordsStore = useWordsStore()
 const { showSuccess, showError } = useToast()
@@ -139,7 +190,7 @@ const handleScroll = () => {
     }
 
     const scrollPosition = window.innerHeight + window.scrollY
-    const pageHeight = document.documentElement.offsetHeight - 100 
+    const pageHeight = document.documentElement.offsetHeight - 100
 
     if (scrollPosition >= pageHeight) {
         loadMoreWords()
@@ -216,6 +267,19 @@ const closeModal = () => {
 
 // Инициализация
 onMounted(() => {
+    useHotkeys({
+        onNewWord: () => {
+            if (!showAddModal.value && !showEditModal.value) {
+                showAddModal.value = true
+            }
+        },
+        onCloseModals: () => {
+            if (showAddModal.value || showEditModal.value) {
+                closeModal()
+            }
+        }
+    })
+
     if (wordsStore.words.length === 0) {
         wordsStore.fetchWords()
     }

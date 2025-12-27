@@ -2,17 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Кастомные импорты */
+@import './animations.css';
+@import './transitions.css';
+
+
 @layer base {
     body {
         @apply bg-background text-black font-sans;
     }
 
-    /* Стили для японского текста */
     .jp-text {
         @apply font-jp;
     }
 
-    /* Цвета для чтений */
     .onyomi {
         @apply text-onyomi;
     }

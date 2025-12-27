@@ -47,7 +47,25 @@ export const useWordsStore = defineStore('words', () => {
             nextCursor.value = 0
             hasMore.value = true
 
-            const response = await api.get('/words/search', { params })
+            const queryParams = { ...params }
+
+            if (Array.isArray(queryParams.tags)) {
+                queryParams.tags = queryParams.tags.join(',')
+            }
+            if (Array.isArray(queryParams.on)) {
+                queryParams.on = queryParams.on.join(',')
+            }
+            if (Array.isArray(queryParams.kun)) {
+                queryParams.kun = queryParams.kun.join(',')
+            }
+
+            const response = await api.get('/words/search', {
+                params: queryParams,
+                paramsSerializer: {
+                    indexes: null
+                }
+            })
+
             const { data } = response.data
 
             words.value = data.words || []
