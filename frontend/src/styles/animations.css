@@ -1,0 +1,35 @@
+/* Анимация появления карточек */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.word-card-enter {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+/* Анимация кнопок */
+.btn-hover {
+    transition: all 0.2s ease;
+}
+
+.btn-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+/* Анимация поиска */
+.search-focus {
+    transition: all 0.3s ease;
+}
+
+.search-focus:focus {
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}

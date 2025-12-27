@@ -18,6 +18,14 @@ export default {
                 'sans': ['Roboto', 'sans-serif'],
                 'jp': ['Hiragino Sans', 'Yu Gothic', 'Meiryo', 'sans-serif'],
             },
+            typography: {
+                jp: {
+                    css: {
+                        fontFamily: "'Hiragino Sans', 'Yu Gothic', 'Meiryo', 'sans-serif'",
+                        fontWeight: '400',
+                    },
+                },
+            },
         },
     },
     plugins: [],

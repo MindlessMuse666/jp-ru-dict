@@ -1,5 +1,23 @@
 basePath: /api
 definitions:
+  jp-ru-dict_backend_internal_model.CSVImportRequest:
+    properties:
+      content:
+        type: string
+    required:
+    - content
+    type: object
+  jp-ru-dict_backend_internal_model.CSVImportResponse:
+    properties:
+      errors:
+        items:
+          type: string
+        type: array
+      failed_count:
+        type: integer
+      imported_count:
+        type: integer
+    type: object
   jp-ru-dict_backend_internal_model.UserLoginRequest:
     properties:
       email:
@@ -473,6 +491,43 @@ paths:
       security:
       - BearerAuth: []
       summary: Обновить слово
+      tags:
+      - words
+  /api/words/import:
+    post:
+      consumes:
+      - application/json
+      description: 'Импортирует слова из CSV формата. Формат: jp;ru;on;kun;ex_jp;ex_ru;tags.
+        Поля разделены точкой с запятой, массивы внутри полей разделены запятой.'
+      parameters:
+      - description: CSV данные для импорта
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/jp-ru-dict_backend_internal_model.CSVImportRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Результат импорта
+          schema:
+            $ref: '#/definitions/jp-ru-dict_backend_internal_model.CSVImportResponse'
+        "400":
+          description: Неверный формат CSV
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Импорт слов из CSV
       tags:
       - words
   /api/words/search:

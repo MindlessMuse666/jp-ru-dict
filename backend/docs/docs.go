@@ -325,6 +325,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/words/import": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Импортирует слова из CSV формата. Формат: jp;ru;on;kun;ex_jp;ex_ru;tags. Поля разделены точкой с запятой, массивы внутри полей разделены запятой.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "words"
+                ],
+                "summary": "Импорт слов из CSV",
+                "parameters": [
+                    {
+                        "description": "CSV данные для импорта",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/jp-ru-dict_backend_internal_model.CSVImportRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Результат импорта",
+                        "schema": {
+                            "$ref": "#/definitions/jp-ru-dict_backend_internal_model.CSVImportResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Неверный формат CSV",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/words/search": {
             "get": {
                 "security": [
@@ -576,6 +633,34 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "jp-ru-dict_backend_internal_model.CSVImportRequest": {
+            "type": "object",
+            "required": [
+                "content"
+            ],
+            "properties": {
+                "content": {
+                    "type": "string"
+                }
+            }
+        },
+        "jp-ru-dict_backend_internal_model.CSVImportResponse": {
+            "type": "object",
+            "properties": {
+                "errors": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "failed_count": {
+                    "type": "integer"
+                },
+                "imported_count": {
+                    "type": "integer"
+                }
+            }
+        },
         "jp-ru-dict_backend_internal_model.UserLoginRequest": {
             "type": "object",
             "required": [
@@ -817,12 +902,12 @@ const docTemplate = `{
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "1.1",
+	Version:          "1.0",
 	Host:             "localhost:8080",
 	BasePath:         "/api",
 	Schemes:          []string{"http"},
 	Title:            "JP-RU Dictionary API",
-	Description:      "API для веб-приложения \"Мой русско-японский словарь >w<\"",
+	Description:      "API для личного русско-японского словаря",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

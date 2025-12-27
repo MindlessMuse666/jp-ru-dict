@@ -151,7 +151,7 @@ func (r *wordsRepository) SearchWords(userID int, query string, tags, on, kun []
                   FROM words 
                   WHERE user_id = $1 AND id > $2`
 
-	args := []interface{}{userID, cursor}
+	args := []any{userID, cursor}
 	argCounter := 3
 
 	var conditions []string

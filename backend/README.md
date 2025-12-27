@@ -155,7 +155,7 @@ backend/
 
 ### Swagger UI
 
-После запуска сервера откройте: <http://localhost:8080/swagger/index.html>
+После запуска сервера откройте: `http://localhost:8080/swagger/index.html`
 OpenAPI спецификация
 
 - JSON: `docs/swagger.json`

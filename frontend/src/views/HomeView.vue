@@ -53,7 +53,8 @@
         </div>
 
         <!-- Сообщение о пустом списке -->
-        <div v-if="!wordsStore.loading && wordsStore.words.length === 0" class="text-center py-12">
+        <div v-if="!wordsStore.loading && (!wordsStore.words || wordsStore.words.length === 0)"
+            class="text-center py-12">
             <div class="text-gray-400 mb-4">
                 <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1"
@@ -122,7 +123,7 @@ const isSearchActive = ref(false)
 
 // Компьютед свойство для отображения правильного сообщения
 const emptyMessage = computed(() => {
-    if (wordsStore.loading) return ''
+    if (wordsStore.loading) return 'Загрузка...'
     if (isSearchActive.value) {
         return currentSearchQuery.value
             ? `По запросу "${currentSearchQuery.value}" ничего не найдено`
@@ -133,15 +134,14 @@ const emptyMessage = computed(() => {
 
 // Бесконечная пагинация при скролле
 const handleScroll = () => {
-    // Не загружаем больше при активном поиске
-    if (isSearchActive.value) return
+    if (isSearchActive.value || wordsStore.loading || !wordsStore.hasMore) {
+        return
+    }
 
     const scrollPosition = window.innerHeight + window.scrollY
-    const pageHeight = document.documentElement.offsetHeight - 200
+    const pageHeight = document.documentElement.offsetHeight - 100 
 
-    if (scrollPosition >= pageHeight &&
-        !wordsStore.loading &&
-        wordsStore.hasMore) {
+    if (scrollPosition >= pageHeight) {
         loadMoreWords()
     }
 }

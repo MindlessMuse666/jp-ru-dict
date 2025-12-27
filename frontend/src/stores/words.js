@@ -50,9 +50,9 @@ export const useWordsStore = defineStore('words', () => {
             const response = await api.get('/words/search', { params })
             const { data } = response.data
 
-            words.value = data.words
-            nextCursor.value = data.next_cursor
-            hasMore.value = data.has_more
+            words.value = data.words || []
+            nextCursor.value = data.next_cursor || 0
+            hasMore.value = data.has_more || false
         } catch (err) {
             error.value = err.response?.data?.error || 'Ошибка при поиске слов'
             console.error('Ошибка при поиске слов:', err)

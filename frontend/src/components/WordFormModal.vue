@@ -399,6 +399,13 @@ const validateForm = () => {
     if (validJp.length === 0) {
         errors.jp = 'Необходимо указать хотя бы одно японское написание'
         isValid = false
+    } else {
+        // Проверка на дубликаты
+        const uniqueJp = [...new Set(validJp)]
+        if (uniqueJp.length !== validJp.length) {
+            errors.jp = 'Японские написания не должны повторяться'
+            isValid = false
+        }
     }
 
     // Проверка русских переводов

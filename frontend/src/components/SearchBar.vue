@@ -116,11 +116,10 @@ const advancedFilters = reactive({
 const debouncedSearch = debounce(() => {
     loading.value = true
     emit('search', searchQuery.value.trim())
-    // Симуляция загрузки для UX
     setTimeout(() => {
         loading.value = false
     }, 300)
-}, 500)
+}, 800)
 
 const handleSearchInput = () => {
     debouncedSearch()
