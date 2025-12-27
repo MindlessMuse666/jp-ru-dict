@@ -25,6 +25,16 @@
                         </button>
                     </div>
 
+                    <!-- Кнопка импорта -->
+                    <button @click="showImportModal = true"
+                        class="px-4 py-2 bg-secondary hover:bg-secondary/90 text-white font-medium rounded-md transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
+                        </svg>
+                        Импорт CSV
+                    </button>
+
                     <!-- Кнопка добавления -->
                     <button @click="showAddModal = true"
                         class="px-4 py-2 bg-primary hover:bg-primary/90 text-white font-medium rounded-md transition-colors flex items-center">
@@ -79,19 +89,17 @@
 
         <!-- Список слов -->
         <div v-else>
-            <TransitionGroup name="list" tag="div" class="space-y-4">
+            <div class="words-list space-y-4">
                 <WordCard v-for="word in wordsStore.words" :key="word.id" :word="word" :is-compact-view="isCompactView"
                     @edit="handleEditWord(word)" />
-            </TransitionGroup>
+            </div>
 
             <!-- Индикатор загрузки -->
             <LoadingSpinner v-if="wordsStore.loading && wordsStore.words.length > 0" />
 
             <!-- Индикатор загрузки при подгрузке новых слов -->
-            <div v-else-if="wordsStore.loading && wordsStore.words.length > 0" class="mt-6">
-                <div class="space-y-4">
-                    <WordSkeleton v-for="n in 3" :key="'skeleton-more-' + n" />
-                </div>
+            <div v-if="wordsStore.loading && wordsStore.words.length > 0" class="mt-6 space-y-4">
+                <WordSkeleton v-for="n in 3" :key="'skeleton-more-' + n" />
             </div>
 
             <!-- Кнопка "Загрузить еще" для десктопа -->
@@ -109,10 +117,11 @@
         </div>
 
         <!-- Модальное окно добавления/редактирования -->
-        <Transition name="modal">
-            <WordFormModal v-if="showAddModal || showEditModal" :word="selectedWord" @close="closeModal"
-                @saved="handleWordSaved" />
-        </Transition>
+        <WordFormModal v-if="showAddModal" :word="selectedWord" @close="closeModal" @saved="handleWordSaved"
+            :is-open="showAddModal" />
+
+        <WordFormModal v-if="showEditModal" :word="selectedWord" @close="closeModal" @saved="handleWordSaved"
+            :is-open="showEditModal" />
     </div>
 </template>
 
@@ -161,12 +170,14 @@ import WordFormModal from '@/components/WordFormModal.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import WordSkeleton from '@/components/WordSkeleton.vue'
+import ImportModal from '@/components/ImportModal.vue'
 
 const wordsStore = useWordsStore()
 const { showSuccess, showError } = useToast()
 
 const isCompactView = ref(true)
 const showAddModal = ref(false)
+const showImportModal = ref(false)
 const showEditModal = ref(false)
 const selectedWord = ref(null)
 const currentSearchQuery = ref('')
@@ -195,6 +206,10 @@ const handleScroll = () => {
     if (scrollPosition >= pageHeight) {
         loadMoreWords()
     }
+}
+
+const handleImported = () => {
+    wordsStore.fetchWords(20, true)
 }
 
 const loadMoreWords = () => {

@@ -44,43 +44,78 @@
             enter-from-class="transform opacity-0 -translate-y-4" enter-to-class="transform opacity-100 translate-y-0"
             leave-active-class="transition-all duration-200 ease-in"
             leave-from-class="transform opacity-100 translate-y-0" leave-to-class="transform opacity-0 -translate-y-4">
-            <div v-if="hasActiveFilters" class="mb-4 flex flex-wrap gap-2">
+            <div v-if="showAdvanced" class="pt-4 border-t">
+                <!-- Поля для расширенного поиска -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <!-- Теги -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Теги
+                            <span class="text-xs text-gray-500">(через запятую)</span>
+                        </label>
+                        <input v-model="advancedFilters.tags" type="text"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                            placeholder="n5, мебель" />
+                    </div>
 
-                <!-- Теги -->
-                <span v-if="activeTags.length > 0"
-                    class="inline-flex items-center px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
-                    Теги: {{ activeTags.join(', ') }}
-                    <button @click="clearTagFilter('tags')"
-                        class="ml-2 text-blue-600 hover:text-blue-800 text-sm">×</button>
-                </span>
+                    <!-- Онъёми -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Онъёми
+                            <span class="text-xs text-gray-500">(через запятую)</span>
+                        </label>
+                        <input v-model="advancedFilters.on" type="text"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                            placeholder="き, シ" />
+                    </div>
 
-                <!-- Онъёми -->
-                <span v-if="activeOn.length > 0"
-                    class="inline-flex items-center px-3 py-1 text-xs bg-onyomi/20 text-gray-700 rounded-full">
-                    Онъёми: {{ activeOn.join(', ') }}
-                    <button @click="clearTagFilter('on')"
-                        class="ml-2 text-gray-600 hover:text-gray-800 text-sm">×</button>
-                </span>
+                    <!-- Кунъёми -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Кунъёми
+                            <span class="text-xs text-gray-500">(через запятую)</span>
+                        </label>
+                        <input v-model="advancedFilters.kun" type="text"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent transition-colors"
+                            placeholder="つくえ" />
+                    </div>
+                </div>
 
-                <!-- Кунъёми -->
-                <span v-if="activeKun.length > 0"
-                    class="inline-flex items-center px-3 py-1 text-xs bg-kunyomi/20 text-gray-700 rounded-full">
-                    Кунъёми: {{ activeKun.join(', ') }}
-                    <button @click="clearTagFilter('kun')"
-                        class="ml-2 text-gray-600 hover:text-gray-800 text-sm">×</button>
-                </span>
-            </div>
+                <!-- Активные фильтры -->
+                <div v-if="hasActiveFilters" class="mb-4 flex flex-wrap gap-2">
+                    <span v-if="activeTags.length > 0"
+                        class="inline-flex items-center px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full">
+                        Теги: {{ activeTags.join(', ') }}
+                        <button @click="clearTagFilter('tags')"
+                            class="ml-2 text-blue-600 hover:text-blue-800 text-sm">×</button>
+                    </span>
 
-            <!-- Кнопки расширенного поиска -->
-            <div class="mt-4 flex justify-end space-x-3">
-                <button @click="clearAdvancedFilters" type="button"
-                    class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
-                    Сбросить
-                </button>
-                <button @click="applyAdvancedSearch" type="button"
-                    class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors">
-                    Применить фильтры
-                </button>
+                    <span v-if="activeOn.length > 0"
+                        class="inline-flex items-center px-3 py-1 text-xs bg-purple-100 text-purple-800 rounded-full">
+                        Онъёми: {{ activeOn.join(', ') }}
+                        <button @click="clearTagFilter('on')"
+                            class="ml-2 text-purple-600 hover:text-purple-800 text-sm">×</button>
+                    </span>
+
+                    <span v-if="activeKun.length > 0"
+                        class="inline-flex items-center px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                        Кунъёми: {{ activeKun.join(', ') }}
+                        <button @click="clearTagFilter('kun')"
+                            class="ml-2 text-green-600 hover:text-green-800 text-sm">×</button>
+                    </span>
+                </div>
+
+                <!-- Кнопки расширенного поиска -->
+                <div class="mt-4 flex justify-end space-x-3">
+                    <button @click="clearAdvancedFilters" type="button"
+                        class="px-4 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-md transition-colors">
+                        Сбросить
+                    </button>
+                    <button @click="applyAdvancedSearch" type="button"
+                        class="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-md transition-colors">
+                        Применить фильтры
+                    </button>
+                </div>
             </div>
         </Transition>
     </div>
